@@ -1,0 +1,7 @@
+torch==2.0.0  # Or the version compatible with your environment
+torchvision==0.15.0  # Ensure compatibility with the PyTorch version
+tqdm==4.65.0
+Pillow==9.5.0
+numpy==1.24.2
+imageio==2.26.0
+tkinter==0.1.0  # Note: tkinter is typically included with Python standard library, so it might not need to be in requirements.txt

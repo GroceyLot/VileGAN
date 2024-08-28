@@ -1,0 +1,7 @@
+{
+    "loadInfo": {
+        "latent": 32,
+        "channels": 72,
+        "size": 128
+    }
+}
