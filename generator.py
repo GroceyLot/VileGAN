@@ -72,6 +72,10 @@ class Generator(nn.Module):
 
 class GanImageGenerator:
     def __init__(self):
+        # Check for CUDA availability
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"Using device: {self.device}")
+
         self.generator: Generator | None = None
         self.latentDim: int | None = None
         self.generatorChannels: int | None = None
@@ -140,11 +144,13 @@ class GanImageGenerator:
                 # Initialize the generator model with the loaded parameters
                 self.generator = Generator(
                     self.imageSize, self.latentDim, self.generatorChannels
-                )
+                ).to(
+                    self.device
+                )  # Move model to the correct device
 
                 # Load the state dictionary into the generator
                 modelPath = os.path.join(modelPath, "generator.pth")
-                stateDict = torch.load(modelPath, map_location="cpu")
+                stateDict = torch.load(modelPath, map_location=self.device)
                 self.generator.load_state_dict(stateDict)
                 self.generator.eval()
                 print(
@@ -152,7 +158,7 @@ class GanImageGenerator:
                 )
 
                 self.createSliders(self.latentDim)
-                self.noiseVector = torch.randn(1, self.latentDim, 1, 1)
+                self.noiseVector = torch.randn(1, self.latentDim, 1, 1).to(self.device)
                 print(
                     f"Model loaded with latentDim={self.latentDim}, generatorChannels={self.generatorChannels}, imageSize={self.imageSize}"
                 )
@@ -233,7 +239,7 @@ class GanImageGenerator:
     def generateRandom(self):
         if not self.generator:
             return
-        self.noiseVector = torch.randn(1, len(self.sliders), 1, 1)
+        self.noiseVector = torch.randn(1, len(self.sliders), 1, 1).to(self.device)
         for i, slider in enumerate(self.sliders):
             slider.set(self.noiseVector[0, i, 0, 0].item())
         self.generateImage()
@@ -314,17 +320,17 @@ class GanImageGenerator:
             return
 
         # Prompt user for video length (in seconds) and FPS
-        video_length = simpledialog.askinteger(
+        videoLength = simpledialog.askinteger(
             "Video Length", "Enter video length (seconds):", minvalue=1, maxvalue=600
         )
         fps = simpledialog.askinteger(
             "FPS", "Enter frames per second (FPS):", minvalue=1, maxvalue=120
         )
-        if video_length is None or fps is None:
+        if videoLength is None or fps is None:
             return  # If the user cancels the prompt
 
         # Calculate the number of frames based on video length and FPS
-        num_frames = video_length * fps
+        numFrames = videoLength * fps
 
         def _generate():
 
@@ -335,7 +341,7 @@ class GanImageGenerator:
             # Store frames for video
             frames = []
 
-            for frameIdx in range(num_frames):
+            for frameIdx in range(numFrames):
                 # Randomly change one slider's value
                 randomIndex = torch.randint(0, len(self.sliders), (1,)).item()
 
@@ -362,7 +368,7 @@ class GanImageGenerator:
                     )  # Rescale to [0, 255]
                     frames.append(frame)
 
-                print(f"Generated frame {frameIdx + 1}/{num_frames}")
+                print(f"Generated frame {frameIdx + 1}/{numFrames}")
 
             # Use imageio to create a video
             timestamp = int(time.time())
